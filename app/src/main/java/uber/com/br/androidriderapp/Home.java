@@ -101,6 +101,9 @@ public class Home extends AppCompatActivity
     //Send Alert
     IFCMService mService;
 
+    //Presense system
+    DatabaseReference driversAvailable;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -123,10 +126,6 @@ public class Home extends AppCompatActivity
         //Maps
         mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-
-        //Geo Fire
-       /* ref = FirebaseDatabase.getInstance().getReference(Common.driver_tbl);
-        geoFire = new GeoFire(ref);*/
 
         //Init view
         imgExpandable = findViewById(R.id.imgExpandable);
@@ -318,6 +317,21 @@ public class Home extends AppCompatActivity
 
         if (mLastLocation != null) {
 
+            //Presense System
+            driversAvailable = FirebaseDatabase.getInstance().getReference(Common.driver_tbl);
+            driversAvailable.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    //if have change from Drivers table, we will reaload all drivers available
+                    loadAllAvailableDriver();
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+
+                }
+            });
+
             final double latitude = mLastLocation.getLatitude();
             final double longitude = mLastLocation.getLongitude();
 
@@ -342,6 +356,12 @@ public class Home extends AppCompatActivity
     }
 
     private void loadAllAvailableDriver() {
+
+        //First, we need delete all markers on map (include our location marker and available drivers marker)
+        mMap.clear();
+        //After that, just add our location again
+        mMap.addMarker(new MarkerOptions().position(new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude())))
+                .setTitle("You");
 
         //Load all available Driver in distance 3km
         DatabaseReference driverLocation = FirebaseDatabase.getInstance().getReference(Common.driver_tbl);
